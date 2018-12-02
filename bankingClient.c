@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <netdb.h>
-
+#include "bankingClient.h"
 
 int main(int argc, char ** argv){
 	
@@ -17,7 +17,7 @@ int main(int argc, char ** argv){
 	
 	int client_fd, val_trans;			//client_fd -> socket descriptor, val_trans -> returning int value from read and write
 	struct sockaddr_in serv_address;		//struct used to store the server address/hostname and port number
-	char buffer[1024];				//buffer to send message back and forth from client and server
+	char buffer[400];				//buffer to send message back and forth from client and server
 	bzero(buffer, sizeof(buffer));			//setting every byte of buffer to '0' in the beginning 
 	strcpy(buffer, "This is message from client");	//First message from client to server
 	struct hostent* server;				//this will store the human readable hostname as actual hostname by converting it using gethostbyname(char*)
@@ -29,14 +29,12 @@ int main(int argc, char ** argv){
 		return -1;
 	}
 
-
 //checking if the server name is correct or not; Server name must be same as the server name where bankingServer is executing
 	server = gethostbyname(argv[1]);
 	if(server == NULL) {
-		fprintf(stderr, "Error! Server name is not correct!\n");
+		fprintf(stderr, "Error! Unable to resolve the Server name!\n");
 		return -1;
 	}	
-
 
 //Opening a socket for client using socket()
 	if((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -44,24 +42,42 @@ int main(int argc, char ** argv){
 		return -1;
 	}
 
-
 //setting every single byte of serv_address to '0' at first
 	memset(&serv_address, '0' , sizeof(serv_address));
-
 
 //filling up the struct sockaddr_in with port number, server address and sin_family
 	serv_address.sin_family = AF_INET;
 	serv_address.sin_port = htons(PORT);
 	bcopy((char*)server->h_addr, (char*) &serv_address.sin_addr.s_addr, server->h_length);
 
-
 	if(connect(client_fd, (struct sockaddr *) &serv_address, sizeof(serv_address)) < 0) {
 		fprintf(stderr, "Error! Unable to connect to Server.\n");
 		return -1;
 	} else {
-		fprintf(stderr, "\n\n** Successfully connected to the Server **\n\n");
+		fprintf(stderr, "Client is successfully connected to the Server.\n");
 	}
 	
+	printf("\n\n\t*\tCongratulations! You are successfully connected to our Banking Server. How can we help you today?\t*\n\n");
+	while (1) {
+		bzero(buffer, 400);
+		print_options();
+		scanf("%s", buffer);
+		if (strcmp ("quit", buffer) == 0) {
+			printf("Client is disconnected from the Server.\n");
+			close(client_fd);
+			return 0;
+		}
+		val_trans = write(client_fd, buffer, strlen(buffer));
+		if(val_trans < 0) {
+			fprintf(stderr, "Error! Unable to write a buffer to the network socket.\n");
+			return -1;
+		} 
+		
+		
+	}	
+
+
+/*
 	val_trans = write(client_fd, buffer, strlen(buffer));	
 	if(val_trans < 0){
 		fprintf(stderr, "Error! Unable to write a buffer to the network socket.\n");
@@ -75,7 +91,22 @@ int main(int argc, char ** argv){
 	}
 	
 	printf("%s\n", buffer);
-
+*/
 	return 0;
 
+}
+
+
+
+
+
+
+
+
+
+void print_options(){
+	printf("To create a new Bank Account, TYPE IN :- create <accountname>\n");
+	printf("To start a session with your existing account, TYPE IN :- server <accountname>\n");
+	printf("To close this connection, TYPE IN :- quit\n");
+	return;
 }
