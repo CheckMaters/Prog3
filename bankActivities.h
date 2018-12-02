@@ -33,4 +33,30 @@ username with starting balance of $0.0
 */
 int add_account (char * new_account, bank_account * main_list);
 
+
+
+
+/*
+this function will withdraw money from
+the specified account. If there isn't 
+enought money to withdraw the specified 
+amount by the client, this function will
+print out an error message and return -1, 
+else it would subtract the withdrawl amount
+from the balance of the specified account.
+*/
+int withdraw (float amount, bank_accounts * account);
+
+
+
+
+/*
+this function will deposit the amount 
+specified the client into his/her 
+specified bank account. It will check if the amount
+specified by the client if correct or not i.e., it 
+can't be less than or equal to 0.
+*/
+int deposit (float amount, bank_accounts * account);
+
 #endif
