@@ -2,6 +2,28 @@
 #include <stlib.h>
 #include <string.h>
 #include <linkedList.h>
+#include "bankActivities.h"
+
+
+int withdrawl (float amount, bank_accounts * account) {
+	if (account->balance < amount) {
+		fprintf("Error! Not enought money in the account.\n");
+		return -1;
+	}
+	account->balance = account->balance - amount;
+	return 0;
+}
+
+
+
+int deposit (float amount, bank_accounts * account) {
+	if(amount <= 0) {
+		fprintf("Error! Deposit amount needs to be greater than 0.\n");
+		return -1;
+	}
+	account->balance = account->balance + amount;
+	return 0;
+}
 
 
 int add_account (char * new_account, bank_accounts * main_list) {
