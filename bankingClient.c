@@ -7,6 +7,129 @@
 #include <netdb.h>
 
 
+int inputHandling(void* args){
+	int counter = 0;
+	int checker = 0;
+	char* first = (char*)args;
+	char* str = malloc(sizeof(char)*256);
+	char *token = strtok(first, " ");
+	int j;
+	int lastspace = 0;
+	
+	while(token != NULL) {
+		
+		printf("counter %d\n", counter);
+		
+		for(j = 0; j< strlen(token); j++){
+			if(token[j] == ' ' || token[j] == '\n'){
+				printf("hellopoop\n");
+				lastspace = 1;
+			}
+			printf("here: %c\n", token[j]);
+		}
+		if(lastspace == 1){
+			printf("got in\n");
+			for(j=0; j < strlen(token)-1;j++){
+				str[j]=token[j];
+				printf("in the string %c\n", token[j]);
+			}
+			token = str;
+			printf("new length %d\n", strlen(str));
+		}
+		
+		printf("%s %d\n", token, strlen(token));
+		if(counter == 0){
+			printf("%d---\n", checker);
+			if(strcmp(token, "create")==0){
+				checker = 1;
+					//printf("hello sir");
+			} else if(strcmp(token, "serve")==0) {
+				checker = 2;
+				
+			} else if (strcmp(token, "deposit") == 0){
+				checker = 3;
+			} else if (strcmp(token, "withdraw") == 0){
+				checker = 4;
+				
+			} else if (strcmp(token, "query")==0){
+				checker = 5;
+				
+			} else if (strcmp(token, "end")==0){
+				checker = 6;
+				
+			} else if (strcmp(token, "quit")==0){
+				checker = 7;
+				
+			} else {
+				fprintf(stderr, "Incorrect spelling or invalid command. Try again.\n");
+				return -1;
+			}
+			
+		} else if (counter == 1){
+			if (checker == 1||checker==2){
+				if(strlen(token)>255){
+					fprintf(stderr, "Too long of a username. Try again.\n");
+					return -1;
+				}
+				
+			} else if (checker > 2 && checker < 5){
+				if(strlen(token)>255){
+					fprintf(stderr, "Too long of a username. Try again.\n");
+					return -1;
+				}
+				int dotCounter = 0;
+				int i = 0;
+				printf("%s\n", token);
+				for(i;i<strlen(token)-1;i++){
+					printf("%c %d %d\n", token[i], dotCounter, strlen(token));
+					if(token[i] == '.'){
+						dotCounter++;
+						continue;
+					}
+					if(isdigit((int)token[i]) == 0){
+						fprintf(stderr, "Invalid amount. Try again.\n");
+						return -1;
+					}
+				}
+				if(dotCounter > 1){
+					fprintf(stderr, "Invalid amount. Try again.\n");
+					return -1;
+				}
+				
+			} else if(checker == 0){
+				fprintf(stderr, "Invalid argument. Try again.\n");
+				return -1;
+			} else if (checker == 5||checker == 6|| checker == 7) {
+				fprintf(stderr, "Invalid arguments. Try again.\n");
+				return -1;
+			}
+			
+			
+		} else if(counter >= 2) {
+			fprintf(stderr, "Incorrect format of the input to many spaces. Try again.\n");
+			return -1;
+		}
+		printf("counter right before %d\n", counter);
+		counter+=1;
+		token = strtok(NULL, " ");
+		printf("counter %d\n", counter);
+	}
+	printf("counter %d\n", counter);
+	if(counter == 0 || counter > 2){
+		fprintf(stderr,"Invalid number of arguments. Try again.\n");
+		return -1;
+	} else if(counter == 1){
+		return checker;
+		
+	} else {
+		return checker;
+	}
+	fprintf(stderr,"Check arguments. Try again.\n");
+	return -1;
+	
+}
+
+
 int main(int argc, char ** argv){
 	
 //Error if the arguments are more or less than expected
@@ -14,12 +137,16 @@ int main(int argc, char ** argv){
 		fprintf(stderr, "Error! Unexpected total number of Arguments.\n");
 		return -1;
 	}
-	
+	char buff[1024];
+	int num;
 	int client_fd, val_trans;			//client_fd -> socket descriptor, val_trans -> returning int value from read and write
 	struct sockaddr_in serv_address;		//struct used to store the server address/hostname and port number
 	char buffer[1024];				//buffer to send message back and forth from client and server
 	bzero(buffer, sizeof(buffer));			//setting every byte of buffer to '0' in the beginning 
-	strcpy(buffer, "This is message from client");	//First message from client to server
+	//strcpy(buffer, "This is message from client");	//First message from client to server
+	
+
+
 	struct hostent* server;				//this will store the human readable hostname as actual hostname by converting it using gethostbyname(char*)
 	int PORT = atoi(argv[2]);			//getting the port number from STDIN
 	
@@ -54,13 +181,25 @@ int main(int argc, char ** argv){
 	serv_address.sin_port = htons(PORT);
 	bcopy((char*)server->h_addr, (char*) &serv_address.sin_addr.s_addr, server->h_length);
 
-
-	if(connect(client_fd, (struct sockaddr *) &serv_address, sizeof(serv_address)) < 0) {
-		fprintf(stderr, "Error! Unable to connect to Server.\n");
-		return -1;
-	} else {
-		fprintf(stderr, "\n\n** Successfully connected to the Server **\n\n");
+	printf("Trying to connect to server. Please stand by.\n");
+	int con;
+	while(1){
+		con = connect(client_fd, (struct sockaddr *) &serv_address, sizeof(serv_address));
+		if (con>=0) {	
+			fprintf(stdout, "\n\n** Successfully connected to the Server **\n\n");
+			break;
+		}
 	}
+
+	printf("To create a new Bank Account, TYPE IN :- create <accountname>\n");
+	printf("To start a session with your existing account, TYPE IN :- server <accountname>\n");
+	printf("To close this connection, TYPE IN :- quit\n");
+
+	
+	fgets(buffer, 1024, stdin);
+
+	//fprintf(stderr, "Error! Unable to connect to Server.\n");
+		
 	
 	val_trans = write(client_fd, buffer, strlen(buffer));	
 	if(val_trans < 0){
@@ -75,7 +214,34 @@ int main(int argc, char ** argv){
 	}
 	
 	printf("%s\n", buffer);
-
+	
+	char buffer2[1024];
+	bzero(buffer2, sizeof(buffer2));
+	
+	/*
+	while(1) {
+		printf("Client: Enter Data for Server:\n");
+		fgets(buffer2,1024,stdin);
+		printf("Buffer-> %s -----\n", buffer2);
+		if ((send(client_fd,buffer2, strlen(buffer2),0))== -1) {
+			fprintf(stderr, "Failure Sending Message\n");
+			close(client_fd);
+			exit(1);
+		} else {
+			printf("Client: Message being sent: %s\n",buffer2);
+			num = recv(client_fd, buffer2, sizeof(buffer2),0);
+			if ( num <= 0 ){
+				printf("Either Connection Closed or Error\n");
+				//Break from the While
+				break;
+			}
+			buff[num] = '\0';
+			printf("Client: Message Received From Server -  %s\n",buffer2);
+		}
+	}
+	*/
+	close(client_fd);
+	
 	return 0;
 
 }
