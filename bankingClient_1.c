@@ -17,113 +17,146 @@ pthread_t output_thread;
 int input_handler(void* args){
 	int counter = 0;
 	int checker = 0;
+	
 	char* first = (char*)args;
 	char* str = malloc(sizeof(char)*256);
+	char* aname = malloc(sizeof(char)*256);
+	printf("%s\n", first);
 	char *token = strtok(first, " ");
+	printf("%s\n", first);
 	int j;
 	int lastspace = 0;
-
-	while(token != NULL) {	
-		printf("counter %d\n", counter);
-		for(j = 0; j< strlen(token); j++){
-			if(token[j] == ' ' || token[j] == '\n'){
-				printf("hellopoop\n");
-				lastspace = 1;
-			}
-			printf("here: %c\n", token[j]);
+	
+	
+	for(j = 0; j< strlen(token); j++){
+		if(token[j] == ' ' || token[j] == '\n'){
+			//printf("hellopoop\n");
+			lastspace = 1;
 		}
-		if(lastspace == 1){
-			printf("got in\n");
-			for(j=0; j < strlen(token)-1;j++){
-				str[j]=token[j];
-				printf("in the string %c\n", token[j]);
-			}
-			token = str;
-			printf("new length %d\n", strlen(str));
+		//printf("here: %c\n", token[j]);
+	}
+	
+	if(lastspace == 1){
+		printf("got in\n");
+		for(j=0; j < strlen(token)-1;j++){
+			str[j]=token[j];
+			//printf("in the string %c\n", token[j]);
 		}
-		printf("%s %d\n", token, strlen(token));
-		if(counter == 0){
-			printf("%d---\n", checker);
-			if(strcmp(token, "create")==0){
-				checker = 1;
-					//printf("hello sir");
-			} else if(strcmp(token, "serve")==0) {
-				checker = 2;
-				
-			} else if (strcmp(token, "deposit") == 0){
-				checker = 3;
-			} else if (strcmp(token, "withdraw") == 0){
-				checker = 4;
-			} else if (strcmp(token, "query")==0){
-				checker = 5;
-				
-			} else if (strcmp(token, "end")==0){
-				checker = 6;
-				
-			} else if (strcmp(token, "quit")==0){
-				checker = 7;
-				
-			} else {
-				fprintf(stderr, "Incorrect spelling or invalid command. Try again.\n");
-				return -1;
-			}
-		} else if (counter == 1){
-			if (checker == 1||checker==2){
-				if(strlen(token)>255){
-					fprintf(stderr, "Too long of a username. Try again.\n");
-					return -1;
-				}
-			} else if (checker > 2 && checker < 5){
-				if(strlen(token)>255){
-					fprintf(stderr, "Too long of a username. Try again.\n");
-					return -1;
-				}
-				int dotCounter = 0;
-				int i = 0;
-				printf("%s\n", token);
-				for(i;i<strlen(token)-1;i++){
-					printf("%c %d %d\n", token[i], dotCounter, strlen(token));
-					if(token[i] == '.'){
-						dotCounter++;
-						continue;
-					}
-					if(isdigit((int)token[i]) == 0){
-						fprintf(stderr, "Invalid amount. Try again.\n");
-						return -1;
-					}
-				}
-				if(dotCounter > 1){
-					fprintf(stderr, "Invalid amount. Try again.\n");
-					return -1;
-				}	
-			} else if(checker == 0){
-				fprintf(stderr, "Invalid argument. Try again.\n");
-				return -1;
-			} else if (checker == 5||checker == 6|| checker == 7) {
-				fprintf(stderr, "Invalid arguments. Try again.\n");
-				return -1;
-			}			
-		} else if(counter >= 2) {
-			fprintf(stderr, "Incorrect format of the input to many spaces. Try again.\n");
+		token = str;
+		//printf("new length %d\n", strlen(str));
+	}
+	
+	//printf("%s-----------first\n", first);
+	str = first + (strlen(token)+1);
+	//printf("%d--token\n", strlen(str));
+	if(strlen(str) == 0 || ((strlen(str) == 1) && str[0] == '\n')){
+		
+		if ((strcmp(token, "query")==0) && (strlen(str) < 1)){
+			return 5;
+			
+		} else if ((strcmp(token, "end")==0) && (strlen(str) < 1)){
+			return 6;
+			
+		} else if ((strcmp(token, "quit")==0) && (strlen(str) < 1)) {
+			return 7;			
+		} else {
+			fprintf(stderr, "Check Account name or amount entered. Try again.\n");
 			return -1;
 		}
-		printf("counter right before %d\n", counter);
-		counter+=1;
-		token = strtok(NULL, " ");
-		printf("counter %d\n", counter);
 	}
-	printf("counter %d\n", counter);
-	if(counter == 0 || counter > 2){
-		fprintf(stderr,"Invalid number of arguments. Try again.\n");
-		return -1;
-	} else if(counter == 1){
-		return checker;
+	printf("%s %d---str\n", str, strlen(str));
+	if(strlen(str) >= 255){
+		for(j=0; j < 255; j++){
+			aname[j] = str[j];
+		}
+	} else if (strlen(str) < 255){
+		for(j=0; j < (strlen(str)-1); j++){
+			aname[j] = str[j];
+		}
+	}
+	
+	printf("%s %d\n", aname, strlen(aname));
+
+	if(token != NULL) {
 		
-	} else {
-		return checker;
+		//printf("%s %d\n", token, strlen(token));
+		
+		printf("%d---\n", checker);
+		if(strcmp(token, "create")==0){
+			checker = 1;
+				//printf("hello sir");
+		} else if(strcmp(token, "serve")==0) {
+			checker = 2;
+			
+		} else if (strcmp(token, "deposit") == 0){
+			checker = 3;
+		} else if (strcmp(token, "withdraw") == 0){
+			checker = 4;
+		} else if (strcmp(token, "query")==0){
+			checker = 5;
+			if (strlen(str)>0){
+				fprintf(stderr,"Error with arguments. Try again.\n");
+				return -1;
+			}
+			
+		} else if (strcmp(token, "end")==0){
+			checker = 6;
+			if (strlen(str)>0){
+				fprintf(stderr,"Error with arguments. Try again.\n");
+				return -1;
+			}
+			
+		} else if (strcmp(token, "quit")==0){
+			checker = 7;
+			if (strlen(str)>0){
+				fprintf(stderr,"Error with arguments. Try again.\n");
+				return -1;
+			}
+			
+		} else {
+			fprintf(stderr, "Incorrect spelling or invalid command. Try again.\n");
+			return -1;
+		}
+		
+		if (checker > 2 && checker < 5){
+			int dotCounter = 0;
+			int i = 0;
+			printf("%s\n", aname);
+			for(i;i<strlen(aname)-1;i++){
+				printf("%c %d %d\n", aname[i], dotCounter, strlen(aname));
+				if(aname[i] == '.'){
+					dotCounter++;
+					continue;
+				}
+				if(isdigit((int)aname[i]) == 0){
+					fprintf(stderr, "Invalid amount. Try again.\n");
+					return -1;
+				}
+			}
+			if(dotCounter > 1){
+				fprintf(stderr, "Invalid amount. Try again.\n");
+				return -1;
+			}
+		} else if(checker == 0){
+			fprintf(stderr, "Invalid argument. Try again.\n");
+			return -1;
+		} 
+		/*
+		else if (checker == 5 && strlen(holder) > 5) {
+			fprintf(stderr, "Invalid arguments. Try again.\n");
+			return -1;
+		} else if ((checker == 6 && strlen(holder) > 5)){
+			fprintf(stderr, "Invalid arguments. Try again.\n");
+			return -1;
+		} else if ((checker == 7 && strlen(holder) > 5)) {
+			fprintf(stderr, "Invalid arguments. Try again.\n");
+			return -1;
+		}
+		*/
 	}
-	fprintf(stderr,"Check arguments. Try again.\n");
-	return -1;	
+	
+	printf("%s\n", first);
+	return checker;
 }
 
 
