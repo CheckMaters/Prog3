@@ -9,161 +9,9 @@
 #include "bankingClient_1.h"
 
 
-int service_mode = 0;      //this is set to -1 if the server response that certain account is already in session.
+int service_mode = -1;      //this is set to 0 if the server response that certain account is already in session.
 pthread_t input_thread;
 pthread_t output_thread;
-
-
-int input_handler(void* args){
-	int counter = 0;
-	int checker = 0;
-	
-	char* first = (char*)args;
-	char* str = malloc(sizeof(char)*256);
-	char* aname = malloc(sizeof(char)*256);
-	printf("%s\n", first);
-	char *token = strtok(first, " ");
-	printf("%s\n", first);
-	int j;
-	int lastspace = 0;
-	
-	
-	for(j = 0; j< strlen(token); j++){
-		if(token[j] == ' ' || token[j] == '\n'){
-			//printf("hellopoop\n");
-			lastspace = 1;
-		}
-		//printf("here: %c\n", token[j]);
-	}
-	
-	if(lastspace == 1){
-		printf("got in\n");
-		for(j=0; j < strlen(token)-1;j++){
-			str[j]=token[j];
-			//printf("in the string %c\n", token[j]);
-		}
-		token = str;
-		//printf("new length %d\n", strlen(str));
-	}
-	
-	//printf("%s-----------first\n", first);
-	str = first + (strlen(token)+1);
-	//printf("%d--token\n", strlen(str));
-	if(strlen(str) == 0 || ((strlen(str) == 1) && str[0] == '\n')){
-		
-		if ((strcmp(token, "query")==0) && (strlen(str) < 1)){
-			return 5;
-			
-		} else if ((strcmp(token, "end")==0) && (strlen(str) < 1)){
-			return 6;
-			
-		} else if ((strcmp(token, "quit")==0) && (strlen(str) < 1)) {
-			return 7;			
-		} else {
-			fprintf(stderr, "Check Account name or amount entered. Try again.\n");
-			return -1;
-		}
-	}
-	printf("%s %d---str\n", str, strlen(str));
-	if(strlen(str) >= 255){
-		for(j=0; j < 255; j++){
-			aname[j] = str[j];
-		}
-	} else if (strlen(str) < 255){
-		for(j=0; j < (strlen(str)-1); j++){
-			aname[j] = str[j];
-		}
-	}
-	
-	printf("%s %d\n", aname, strlen(aname));
-
-	if(token != NULL) {
-		
-		//printf("%s %d\n", token, strlen(token));
-		
-		printf("%d---\n", checker);
-		if(strcmp(token, "create")==0){
-			checker = 1;
-				//printf("hello sir");
-		} else if(strcmp(token, "serve")==0) {
-			checker = 2;
-			
-		} else if (strcmp(token, "deposit") == 0){
-			checker = 3;
-		} else if (strcmp(token, "withdraw") == 0){
-			checker = 4;
-		} else if (strcmp(token, "query")==0){
-			checker = 5;
-			if (strlen(str)>0){
-				fprintf(stderr,"Error with arguments. Try again.\n");
-				return -1;
-			}
-			
-		} else if (strcmp(token, "end")==0){
-			checker = 6;
-			if (strlen(str)>0){
-				fprintf(stderr,"Error with arguments. Try again.\n");
-				return -1;
-			}
-			
-		} else if (strcmp(token, "quit")==0){
-			checker = 7;
-			if (strlen(str)>0){
-				fprintf(stderr,"Error with arguments. Try again.\n");
-				return -1;
-			}
-			
-		} else {
-			fprintf(stderr, "Incorrect spelling or invalid command. Try again.\n");
-			return -1;
-		}
-		
-		if (checker > 2 && checker < 5){
-			int dotCounter = 0;
-			int i = 0;
-			printf("%s\n", aname);
-			for(i;i<strlen(aname)-1;i++){
-				printf("%c %d %d\n", aname[i], dotCounter, strlen(aname));
-				if(aname[i] == '.'){
-					dotCounter++;
-					continue;
-				}
-				if(isdigit((int)aname[i]) == 0){
-					fprintf(stderr, "Invalid amount. Try again.\n");
-					return -1;
-				}
-			}
-			if(dotCounter > 1){
-				fprintf(stderr, "Invalid amount. Try again.\n");
-				return -1;
-			}
-		} else if(checker == 0){
-			fprintf(stderr, "Invalid argument. Try again.\n");
-			return -1;
-		} 
-		/*
-		else if (checker == 5 && strlen(holder) > 5) {
-			fprintf(stderr, "Invalid arguments. Try again.\n");
-			return -1;
-		} else if ((checker == 6 && strlen(holder) > 5)){
-			fprintf(stderr, "Invalid arguments. Try again.\n");
-			return -1;
-		} else if ((checker == 7 && strlen(holder) > 5)) {
-			fprintf(stderr, "Invalid arguments. Try again.\n");
-			return -1;
-		}
-		*/
-	}
-	
-	printf("%s\n", first);
-	return checker;
-}
-
-
-
-
-
-
 
 
 int main(int argc, char ** argv){
@@ -263,7 +111,7 @@ void * first_thread (void * args){
 
     //this while loop will keep going around until user quits
 	while(1){
-		//print_info();         //printing helping statements for user, for the activities he/she can perform
+		print_info();         //printing helping statements for user, for the activities he/she can perform
 		fgets(buffer, 280, stdin);    //reading a line from stdin
 		
 		//just an extra check that buffer reads from the stdin
@@ -312,6 +160,17 @@ void * first_thread (void * args){
 		}
 		else if(input_handler_result == 7){
 				//quit
+                bzero(buffer_to_send, sizeof(buffer_to_send));
+                strcpy(buffer_to_send, "quit");
+                    while(1){
+                        server_write_response = write(client_fd, buffer_to_send, strlen(buffer_to_send));
+                        if(server_write_response < 0){
+                            continue;
+                        }
+                        else {
+                            break;
+                        }
+                    }
 				printf("\t*\tThank You For Your Business. Have a Nice Day.\t*\n");
 				pthread_exit(0);
 					
@@ -346,10 +205,14 @@ void * second_thread (void * socket_fd){
               continue;  
         } 
         else {    
-		  if(strcmp(buffer, "quit")) {
+		  if(strcmp(buffer, "Connnection Closed") == 0) {
             service_mode = 0;
-				pthread_exit(0);
+            pthread_exit(0);
 		  }
+          else if(strcmp(buffer, "Session Ended") == 0){
+              service_mode = 0;
+              continue;
+          }
 		  if(buffer[0] == 'E' && buffer[1] == 'R') {
               //service_mode will be checked when some user wants to start a session with certain account
 			//first two if statements will let service_func know that user can't access the account at the moment so return
@@ -400,7 +263,8 @@ void print_service_info(){
 
 int service_func (int * socket_fd) {
 	int client_fd = *socket_fd;
-	if(service_mode < 0) {
+	if(service_mode == 0) {
+        service_mode = -1;
 		return 0;
 	}
 	char buffer[200];              //the buffer we read from STDIN, entered by user
@@ -481,3 +345,133 @@ int service_func (int * socket_fd) {
 	}
 	
 }
+
+
+
+
+
+
+
+
+
+int input_handler(void* args){
+	int counter = 0;
+	int checker = 0;
+	
+	char* first = (char*)args;
+	char* str = malloc(sizeof(char)*256);
+	char* aname = malloc(sizeof(char)*256);
+	char *token = strtok(first, " ");
+    
+	int j;
+	int lastspace = 0;
+	for(j = 0; j< strlen(token); j++){
+		if(token[j] == ' ' || token[j] == '\n'){
+			
+			lastspace = 1;
+		}
+	}
+	
+	if(lastspace == 1){
+		for(j=0; j < strlen(token)-1;j++){
+			str[j]=token[j];
+		}
+		token = str;
+	}
+	
+	
+	str = first + (strlen(token)+1);
+	
+    //if it's "command" + space + \n, it's an error
+	if(strlen(str) == 0 || ((strlen(str) == 1) && str[0] == '\n')){
+		
+		if ((strcmp(token, "query")==0) && (strlen(str) < 1)){
+			return 5;
+			
+		} else if ((strcmp(token, "end")==0) && (strlen(str) < 1)){
+			return 6;
+			
+		} else if ((strcmp(token, "quit")==0) && (strlen(str) < 1)) {
+			return 7;			
+		} else {
+			fprintf(stderr, "Check Account name or amount entered. Try again.\n");
+			return -1;
+		}
+	}
+	
+	if(strlen(str) >= 255){
+		for(j=0; j < 255; j++){
+			aname[j] = str[j];
+		}
+	} else if (strlen(str) < 255){
+		for(j=0; j < (strlen(str)-1); j++){
+			aname[j] = str[j];
+		}
+	}
+	
+	
+	if(token != NULL) {
+		if(strcmp(token, "create")==0){
+			checker = 1;
+
+		} else if(strcmp(token, "serve")==0) {
+			checker = 2;
+			
+		} else if (strcmp(token, "deposit") == 0){
+			checker = 3;
+		} else if (strcmp(token, "withdraw") == 0){
+			checker = 4;
+		} else if (strcmp(token, "query")==0){
+			checker = 5;
+			if (strlen(str)>0){
+				fprintf(stderr,"Error with arguments. Try again.\n");
+				return -1;
+			}
+			
+		} else if (strcmp(token, "end")==0){
+			checker = 6;
+			if (strlen(str)>0){
+				fprintf(stderr,"Error with arguments. Try again.\n");
+				return -1;
+			}
+			
+		} else if (strcmp(token, "quit")==0){
+			checker = 7;
+			if (strlen(str)>0){
+				fprintf(stderr,"Error with arguments. Try again.\n");
+				return -1;
+			}
+			
+		} else {
+			fprintf(stderr, "Incorrect spelling or invalid command. Try again.\n");
+			return -1;
+		}
+		
+		if (checker > 2 && checker < 5){
+			int dotCounter = 0;
+			int i = 0;
+		
+			for(i;i<strlen(aname)-1;i++){
+				
+				if(aname[i] == '.'){
+					dotCounter++;
+					continue;
+				}
+				if(isdigit((int)aname[i]) == 0){
+					fprintf(stderr, "Invalid amount. Try again.\n");
+					return -1;
+				}
+			}
+			if(dotCounter > 1){
+				fprintf(stderr, "Invalid amount. Try again.\n");
+				return -1;
+			}
+		} else if(checker == 0){
+			fprintf(stderr, "Invalid argument. Try again.\n");
+			return -1;
+		} 
+		
+	}
+	return checker;
+}
+
